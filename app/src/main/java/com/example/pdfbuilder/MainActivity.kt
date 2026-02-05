@@ -566,8 +566,8 @@ fun BookletSettingsContent(
                     Button(
                         onClick = onSelectPdf,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary
+                            containerColor = MaterialTheme.colorScheme.primary, // Blue (Minimalist) / Brown (Retro) / Cyan (Tech)
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text("选择文件")
@@ -825,8 +825,8 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiary
+                    containerColor = MaterialTheme.colorScheme.secondary, // Green (Minimalist)
+                    contentColor = MaterialTheme.colorScheme.onSecondary
                 )
             ) {
                 Icon(painterResource(id = android.R.drawable.ic_menu_save), contentDescription = null)
@@ -841,7 +841,7 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    containerColor = MaterialTheme.colorScheme.tertiary, // Orange (Minimalist)
                     contentColor = MaterialTheme.colorScheme.onTertiary
                 )
             ) {

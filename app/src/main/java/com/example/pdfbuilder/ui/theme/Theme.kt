@@ -22,15 +22,15 @@ enum class AppTheme {
 }
 
 // Minimalist Theme (简约风格)
-val minimalPrimary = Color(0xFF90A4AE) // Blue Grey 300 (Low Saturation)
+val minimalPrimary = Color(0xFF2196F3) // Blue 500 (Original)
 val minimalOnPrimary = Color(0xFFFFFFFF)
-val minimalPrimaryContainer = Color(0xFFCFD8DC)
-val minimalOnPrimaryContainer = Color(0xFF263238)
-val minimalSecondary = Color(0xFFB0BEC5) // Blue Grey 200
-val minimalOnSecondary = Color(0xFF000000)
-val minimalSecondaryContainer = Color(0xFFECEFF1)
-val minimalOnSecondaryContainer = Color(0xFF37474F)
-val minimalTertiary = Color(0xFF546E7A) // Blue Grey 600 (Action Buttons)
+val minimalPrimaryContainer = Color(0xFFBBDEFB)
+val minimalOnPrimaryContainer = Color(0xFF0D47A1)
+val minimalSecondary = Color(0xFF4CAF50) // Green 500 (Original)
+val minimalOnSecondary = Color(0xFFFFFFFF)
+val minimalSecondaryContainer = Color(0xFFC8E6C9)
+val minimalOnSecondaryContainer = Color(0xFF1B5E20)
+val minimalTertiary = Color(0xFFFF9800) // Orange 500 (Original)
 val minimalOnTertiary = Color(0xFFFFFFFF)
 val minimalBackground = Color(0xFFFFFFFF) // Pure White
 val minimalOnBackground = Color(0xFF000000)
