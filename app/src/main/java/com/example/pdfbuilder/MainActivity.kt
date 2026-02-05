@@ -199,6 +199,20 @@ fun BookletApp(
         val currentUpdateState = uiState.updateState
         
         when (currentUpdateState) {
+            is UpdateManager.UpdateState.Checking -> {
+                AlertDialog(
+                    onDismissRequest = { /* Prevent dismiss */ },
+                    title = { Text("正在检查更新...") },
+                    text = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("请稍候")
+                        }
+                    },
+                    confirmButton = {}
+                )
+            }
             is UpdateManager.UpdateState.Available -> {
                 AlertDialog(
                     onDismissRequest = { viewModel.dismissUpdateDialog() },
@@ -237,6 +251,18 @@ fun BookletApp(
                     }
                 )
             }
+            is UpdateManager.UpdateState.NoUpdate -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissUpdateDialog() },
+                    title = { Text("已是最新版本") },
+                    text = { Text("当前应用已是最新版本，无需更新。") },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                            Text("确定")
+                        }
+                    }
+                )
+            }
             is UpdateManager.UpdateState.Downloading -> {
                 AlertDialog(
                     onDismissRequest = { /* Prevent dismiss */ },
@@ -270,8 +296,8 @@ fun BookletApp(
                 )
             }
             else -> {
-                // Show local changelog if no update available
-                ChangelogDialog(onDismiss = { viewModel.dismissUpdateDialog() })
+                // Idle or other states: do nothing
+                LaunchedEffect(Unit) { viewModel.dismissUpdateDialog() }
             }
         }
     }
