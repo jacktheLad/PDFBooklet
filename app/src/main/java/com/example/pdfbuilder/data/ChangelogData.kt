@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.0.12",
+            date = "2026-02-05",
+            changes = listOf(
+                "视觉微调: 优化“简约风格”下的按钮配色，辅助按钮改为深灰色，主操作按钮保持高亮。",
+                "主题适配: 增强“科技深色”和“复古纸张”主题下的按钮颜色适配，视觉更统一。"
+            )
+        ),
+        VersionInfo(
             version = "1.0.11",
             date = "2026-02-05",
             changes = listOf(
