@@ -180,7 +180,11 @@ fun BookletApp(
             onThemeSelected = { viewModel.setAppTheme(it) },
             onShowChangelog = { 
                 showSettings = false 
-                viewModel.showUpdateDialog() // Trigger update check/dialog
+                showChangelog = true
+            },
+            onCheckUpdate = {
+                showSettings = false
+                viewModel.showUpdateDialog()
             },
             onDismiss = { showSettings = false }
         )
@@ -1097,6 +1101,7 @@ fun SettingsDialog(
     currentTheme: AppTheme,
     onThemeSelected: (AppTheme) -> Unit,
     onShowChangelog: () -> Unit,
+    onCheckUpdate: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -1136,12 +1141,22 @@ fun SettingsDialog(
                 Column {
                     Text("关于", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(
-                        onClick = onShowChangelog,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("检查更新 / 更新日志")
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = onCheckUpdate,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("检查更新")
+                        }
+                        OutlinedButton(
+                            onClick = onShowChangelog,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("更新日志")
+                        }
                     }
+                    
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "当前版本: ${BuildConfig.VERSION_NAME}",
