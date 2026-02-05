@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 import com.example.pdfbuilder.ui.theme.AppTheme
 import com.example.pdfbuilder.utils.UpdateManager
-import com.example.pdfbuilder.data.GithubRelease
+import com.example.pdfbuilder.data.AppVersion
 
 enum class PrintType {
     SINGLE_SIDED, // Fronts then Backs
@@ -119,11 +119,11 @@ class BookletViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    fun downloadUpdate(release: GithubRelease) {
+    fun downloadUpdate(version: AppVersion) {
         val context = getApplication<Application>()
         UpdateManager.downloadAndInstall(
             context, 
-            release,
+            version,
             onProgress = { progress ->
                 _uiState.value = _uiState.value.copy(
                     updateState = UpdateManager.UpdateState.Downloading(progress)

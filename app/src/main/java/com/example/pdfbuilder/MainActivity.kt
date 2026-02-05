@@ -198,14 +198,11 @@ fun BookletApp(
             is UpdateManager.UpdateState.Available -> {
                 AlertDialog(
                     onDismissRequest = { viewModel.dismissUpdateDialog() },
-                    title = { Text("发现新版本 " + currentUpdateState.release.tagName) },
+                    title = { Text("发现新版本 v" + currentUpdateState.version.version) },
                     text = {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            // If body is empty or looks like a URL/Path, show a friendly default message
-                            val displayText = if (currentUpdateState.release.body.isNullOrBlank() || currentUpdateState.release.body.startsWith("http")) {
+                            val displayText = currentUpdateState.version.changelog.ifBlank {
                                 "新版本已发布！\n包含多项功能优化与问题修复，建议更新。"
-                            } else {
-                                currentUpdateState.release.body
                             }
                             
                             Text(
@@ -214,7 +211,7 @@ fun BookletApp(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "发布时间: ${currentUpdateState.release.publishedAt.take(10)}",
+                                text = "发布时间: ${currentUpdateState.version.date}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -223,7 +220,7 @@ fun BookletApp(
                     confirmButton = {
                         Button(
                             onClick = {
-                                viewModel.downloadUpdate(currentUpdateState.release)
+                                viewModel.downloadUpdate(currentUpdateState.version)
                             }
                         ) {
                             Text("立即更新")
