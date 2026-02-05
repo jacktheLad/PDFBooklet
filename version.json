@@ -1,6 +1,6 @@
 {
-  "version": "1.1.1",
-  "changelog": "体验修复: 修正了“检查更新”按钮的交互逻辑，现在无更新时会提示“已是最新版本”，不再错误弹出更新日志。\n逻辑优化: 优化更新检测的状态反馈，增加“正在检查”和“已是最新”的明确提示。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.1.apk",
+  "version": "1.1.2",
+  "changelog": "安装修复: 修复下载完成后无法自动调起安装的问题 (FileProvider配置修正)。\n稳定性提升: 下载超时时间从30秒延长至60秒，并增加下载失败自动切换线路的重试机制。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.2.apk",
   "date": "2026-02-05"
 }
