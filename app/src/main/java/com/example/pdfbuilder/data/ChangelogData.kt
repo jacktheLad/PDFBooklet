@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.4",
+            date = "2026-02-05",
+            changes = listOf(
+                "打印升级: 修复直接调用系统打印时清晰度不足的问题，现在直接打印也支持 Retina 级高清画质 (324 DPI)。",
+                "性能优化: 采用智能分级渲染策略，预览流畅不卡顿，导出/打印高清不模糊。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.3",
             date = "2026-02-05",
             changes = listOf(

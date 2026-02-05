@@ -338,7 +338,8 @@ class PdfBookletProcessor(private val context: Context) {
                     sheetIdx, 
                     isBack, 
                     pageWidth.toFloat(), 
-                    pageHeight.toFloat()
+                    pageHeight.toFloat(),
+                    renderDensity = 4.5f // High quality for export
                 )
                 
                 document.finishPage(page)
@@ -413,7 +414,8 @@ class PdfBookletProcessor(private val context: Context) {
                         sheetIdx,
                         isBack,
                         pageWidth.toFloat(),
-                        pageHeight.toFloat()
+                        pageHeight.toFloat(),
+                        renderDensity = 4.5f // High quality for print
                     )
 
                     document.finishPage(page)
@@ -473,7 +475,8 @@ class PdfBookletProcessor(private val context: Context) {
         sheetIndex: Int,
         isBack: Boolean,
         sheetWidth: Float,
-        sheetHeight: Float
+        sheetHeight: Float,
+        renderDensity: Float = 2.0f
     ) {
         val rotation = normalizeRotationDegrees(config.outputRotationDegrees)
         val targetW = sheetWidth
@@ -497,7 +500,7 @@ class PdfBookletProcessor(private val context: Context) {
             }
         }
 
-        drawSheetOnCanvasUnrotated(canvas, renderer, config, sheetIndex, isBack, baseW, baseH)
+        drawSheetOnCanvasUnrotated(canvas, renderer, config, sheetIndex, isBack, baseW, baseH, renderDensity)
         canvas.restore()
     }
 
@@ -508,7 +511,8 @@ class PdfBookletProcessor(private val context: Context) {
         sheetIndex: Int,
         isBack: Boolean,
         sheetWidth: Float,
-        sheetHeight: Float
+        sheetHeight: Float,
+        renderDensity: Float
     ) {
         val inputPageCount = renderer.pageCount
         val baseLogicalContentPages = when (config.splitMode) {
@@ -566,7 +570,8 @@ class PdfBookletProcessor(private val context: Context) {
                 config,
                 isLeft = true,
                 blankPageCount = blankPageCount,
-                totalLogicalContentPages = totalLogicalContentPages
+                totalLogicalContentPages = totalLogicalContentPages,
+                renderDensity = renderDensity
             )
 
             drawPage(
@@ -577,7 +582,8 @@ class PdfBookletProcessor(private val context: Context) {
                 config,
                 isLeft = false,
                 blankPageCount = blankPageCount,
-                totalLogicalContentPages = totalLogicalContentPages
+                totalLogicalContentPages = totalLogicalContentPages,
+                renderDensity = renderDensity
             )
         } else {
             val halfWidth = sheetWidth / 2f
@@ -590,7 +596,8 @@ class PdfBookletProcessor(private val context: Context) {
                 config,
                 isLeft = true,
                 blankPageCount = blankPageCount,
-                totalLogicalContentPages = totalLogicalContentPages
+                totalLogicalContentPages = totalLogicalContentPages,
+                renderDensity = renderDensity
             )
 
             drawPage(
@@ -601,7 +608,8 @@ class PdfBookletProcessor(private val context: Context) {
                 config,
                 isLeft = false,
                 blankPageCount = blankPageCount,
-                totalLogicalContentPages = totalLogicalContentPages
+                totalLogicalContentPages = totalLogicalContentPages,
+                renderDensity = renderDensity
             )
         }
     }
@@ -623,7 +631,8 @@ class PdfBookletProcessor(private val context: Context) {
         config: BookletConfig,
         isLeft: Boolean,
         blankPageCount: Int,
-        totalLogicalContentPages: Int
+        totalLogicalContentPages: Int,
+        renderDensity: Float = 2.0f
     ) {
         if (config.coverMode == CoverMode.NO_COVER_ADD_BLANK && logicalPageIndex == 0) {
             return
@@ -785,7 +794,7 @@ class PdfBookletProcessor(private val context: Context) {
             }
         }
         
-        val density = 4.5f // Scale factor for quality (approx 324 DPI)
+        val density = renderDensity // Scale factor for quality
         
         val bitmapW = (contentRect.width() * density).toInt().coerceAtLeast(1)
         val bitmapH = (contentRect.height() * density).toInt().coerceAtLeast(1)
