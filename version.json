@@ -1,6 +1,6 @@
 {
-  "version": "1.0.18",
-  "changelog": "视觉升级: 简约风格默认主题色由沉闷的灰色升级为高级的「莫兰迪蓝灰」，更显质感。\n体验优化: 优化了界面色彩对比度，视觉体验更舒适。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.18.apk",
+  "version": "1.0.19",
+  "changelog": "紧急修复: 修复部分地区因加速节点缓存导致检测不到更新的问题。\n优化: 增强更新检测逻辑，智能识别并绕过过期缓存，确保第一时间获取新版本。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.19.apk",
   "date": "2026-02-05"
 }

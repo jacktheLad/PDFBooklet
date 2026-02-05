@@ -35,47 +35,71 @@ object UpdateManager {
         onResult(UpdateState.Checking)
         
         Thread {
-            // Strategy: Try Proxy -> If fail, Try Raw
-            var success = false
+            // Strategy: Try Proxy -> If Update Found, return.
+            // If Proxy fails or says "No Update" (could be stale), Try Raw.
+            
+            var proxyResult: UpdateState? = null
             
             // 1. Try Proxy
             try {
-                if (checkUrl(VERSION_JSON_URL_PROXY, onResult)) {
-                    success = true
+                // Add timestamp to bust cache
+                val timestamp = System.currentTimeMillis()
+                val proxyUrlWithTs = "$VERSION_JSON_URL_PROXY?t=$timestamp"
+                proxyResult = fetchUpdateState(proxyUrlWithTs)
+                
+                if (proxyResult is UpdateState.Available) {
+                    onResult(proxyResult)
+                    return@Thread
                 }
             } catch (e: Exception) {
-                // Ignore proxy error, continue to fallback
+                // Ignore proxy error
             }
 
-            // 2. If Proxy failed, Try Raw
-            if (!success) {
-                try {
-                    if (checkUrl(VERSION_JSON_URL_RAW, onResult)) {
-                        success = true
-                    } else {
-                        onResult(UpdateState.Error("Failed to check updates from both sources"))
-                    }
-                } catch (e: Exception) {
-                    onResult(UpdateState.Error("Update check failed: ${e.message}"))
+            // 2. Try Raw (Fallback if Proxy failed or was stale)
+            try {
+                // Add timestamp to bust cache
+                val timestamp = System.currentTimeMillis()
+                val rawUrlWithTs = "$VERSION_JSON_URL_RAW?t=$timestamp"
+                val rawResult = fetchUpdateState(rawUrlWithTs)
+                
+                if (rawResult is UpdateState.Available) {
+                    onResult(rawResult)
+                    return@Thread
                 }
+                
+                // If Raw works but no update, then it's truly no update
+                if (rawResult is UpdateState.NoUpdate) {
+                    onResult(UpdateState.NoUpdate)
+                    return@Thread
+                }
+            } catch (e: Exception) {
+                // Raw failed
+            }
+            
+            // 3. Final Decision
+            // If we are here, neither source returned "Available".
+            // If Proxy said "NoUpdate", fallback to that (assuming Raw failed due to network)
+            if (proxyResult is UpdateState.NoUpdate) {
+                onResult(UpdateState.NoUpdate)
+            } else {
+                onResult(UpdateState.Error("Failed to check updates from both sources"))
             }
         }.start()
     }
     
-    private fun checkUrl(url: String, onResult: (UpdateState) -> Unit): Boolean {
+    private fun fetchUpdateState(url: String): UpdateState {
         val request = Request.Builder().url(url).build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return false
+            if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
 
-            val body = response.body?.string() ?: return false
+            val body = response.body?.string() ?: throw Exception("Empty body")
             val appVersion = gson.fromJson(body, AppVersion::class.java)
             
-            if (isNewVersion(appVersion.version)) {
-                onResult(UpdateState.Available(appVersion))
+            return if (isNewVersion(appVersion.version)) {
+                UpdateState.Available(appVersion)
             } else {
-                onResult(UpdateState.NoUpdate)
+                UpdateState.NoUpdate
             }
-            return true
         }
     }
 
