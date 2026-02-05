@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.2",
+            date = "2026-02-05",
+            changes = listOf(
+                "安装修复: 修复下载完成后无法自动调起安装的问题 (FileProvider配置修正)。",
+                "稳定性提升: 下载超时时间从30秒延长至60秒，并增加下载失败自动切换线路的重试机制。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.1",
             date = "2026-02-05",
             changes = listOf(

@@ -149,8 +149,21 @@ object UpdateManager {
                 // Race to find the fastest connected URL
                 val bestUrl = raceForBestUrl(candidates) ?: originalUrl
                 
-                if (!performDownload(context, bestUrl, "PDFBooklet-v${version.version}.apk", onProgress)) {
-                     withContext(Dispatchers.Main) { onError("Download failed") }
+                // Try the best URL first
+                var downloadSuccess = performDownload(context, bestUrl, "PDFBooklet-v${version.version}.apk", onProgress, onError)
+                
+                // Fallback: If best URL fails, try others sequentially
+                if (!downloadSuccess) {
+                    for (url in candidates) {
+                        if (url != bestUrl) {
+                            downloadSuccess = performDownload(context, url, "PDFBooklet-v${version.version}.apk", onProgress, onError)
+                            if (downloadSuccess) break
+                        }
+                    }
+                }
+                
+                if (!downloadSuccess) {
+                     withContext(Dispatchers.Main) { onError("所有下载通道均失败，请检查网络") }
                 }
 
             } catch (e: Exception) {
@@ -195,11 +208,17 @@ object UpdateManager {
          winner
     }
     
-    private suspend fun performDownload(context: Context, url: String, filename: String, onProgress: (Float) -> Unit): Boolean {
+    private suspend fun performDownload(context: Context, url: String, filename: String, onProgress: (Float) -> Unit, onError: (String) -> Unit): Boolean {
         return withContext(Dispatchers.IO) {
             try {
+                // Use a dedicated client for download with longer timeouts
+                val downloadClient = client.newBuilder()
+                    .connectTimeout(15, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS) // Increased to 60s for slow networks
+                    .build()
+
                 val request = Request.Builder().url(url).build()
-                client.newCall(request).execute().use { response ->
+                downloadClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@withContext false
                     val body = response.body ?: return@withContext false
                     
@@ -229,7 +248,7 @@ object UpdateManager {
                     
                     withContext(Dispatchers.Main) {
                         onProgress(1.0f)
-                        installApk(context, file)
+                        installApk(context, file, onError)
                     }
                     true
                 }
@@ -240,7 +259,7 @@ object UpdateManager {
         }
     }
 
-    private fun installApk(context: Context, file: File) {
+    private fun installApk(context: Context, file: File, onError: (String) -> Unit) {
         try {
             val intent = Intent(Intent.ACTION_VIEW)
             val uri = FileProvider.getUriForFile(
@@ -254,6 +273,7 @@ object UpdateManager {
             context.startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
+            onError("安装启动失败: ${e.message}\n请尝试在文件管理器中手动安装: ${file.absolutePath}")
         }
     }
 }
