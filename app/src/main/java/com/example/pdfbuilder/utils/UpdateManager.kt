@@ -7,19 +7,25 @@ import androidx.core.content.FileProvider
 import com.example.pdfbuilder.BuildConfig
 import com.example.pdfbuilder.data.AppVersion
 import com.google.gson.Gson
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
 
 object UpdateManager {
-    // 1. First try: ghproxy (Fast in China)
-    private const val VERSION_JSON_URL_PROXY = "https://mirror.ghproxy.com/https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
-    // 2. Fallback: Raw GitHub (For VPN/Overseas where ghproxy might be blocked or slow)
-    private const val VERSION_JSON_URL_RAW = "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
+    // Base URL for version.json (Direct)
+    private const val VERSION_URL_DIRECT = "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
     
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+        
     private val gson = Gson()
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     sealed class UpdateState {
         object Idle : UpdateState()
@@ -34,81 +40,77 @@ object UpdateManager {
     fun checkForUpdate(onResult: (UpdateState) -> Unit) {
         onResult(UpdateState.Checking)
         
-        Thread {
-            // Strategy: Try Proxy -> If Update Found, return.
-            // If Proxy fails or says "No Update" (could be stale), Try Raw.
-            
-            var proxyResult: UpdateState? = null
-            
-            // 1. Try Proxy
+        scope.launch {
             try {
-                // Add timestamp to bust cache
+                // Construct race candidates
                 val timestamp = System.currentTimeMillis()
-                val proxyUrlWithTs = "$VERSION_JSON_URL_PROXY?t=$timestamp"
-                proxyResult = fetchUpdateState(proxyUrlWithTs)
+                val urls = listOf(
+                    // 1. ghproxy.net (Champion - Fast & Stable)
+                    "https://ghproxy.net/$VERSION_URL_DIRECT?t=$timestamp",
+                    // 2. kkgithub (Runner-up - Good fallback)
+                    "https://raw.kkgithub.com/jacktheLad/PDFBooklet/main/version.json?t=$timestamp",
+                    // 3. Direct (Baseline - For overseas/VPN)
+                    "$VERSION_URL_DIRECT?t=$timestamp"
+                )
+
+                val result = raceRequests(urls)
                 
-                if (proxyResult is UpdateState.Available) {
-                    onResult(proxyResult)
-                    return@Thread
+                if (result != null) {
+                    val appVersion = gson.fromJson(result, AppVersion::class.java)
+                    if (isNewVersion(appVersion.version)) {
+                        withContext(Dispatchers.Main) { onResult(UpdateState.Available(appVersion)) }
+                    } else {
+                        withContext(Dispatchers.Main) { onResult(UpdateState.NoUpdate) }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) { onResult(UpdateState.Error("Failed to connect to any update source")) }
                 }
             } catch (e: Exception) {
-                // Ignore proxy error
-            }
-
-            // 2. Try Raw (Fallback if Proxy failed or was stale)
-            try {
-                // Add timestamp to bust cache
-                val timestamp = System.currentTimeMillis()
-                val rawUrlWithTs = "$VERSION_JSON_URL_RAW?t=$timestamp"
-                val rawResult = fetchUpdateState(rawUrlWithTs)
-                
-                if (rawResult is UpdateState.Available) {
-                    onResult(rawResult)
-                    return@Thread
-                }
-                
-                // If Raw works but no update, then it's truly no update
-                if (rawResult is UpdateState.NoUpdate) {
-                    onResult(UpdateState.NoUpdate)
-                    return@Thread
-                }
-            } catch (e: Exception) {
-                // Raw failed
-            }
-            
-            // 3. Final Decision
-            // If we are here, neither source returned "Available".
-            // If Proxy said "NoUpdate", fallback to that (assuming Raw failed due to network)
-            if (proxyResult is UpdateState.NoUpdate) {
-                onResult(UpdateState.NoUpdate)
-            } else {
-                onResult(UpdateState.Error("Failed to check updates from both sources"))
-            }
-        }.start()
-    }
-    
-    private fun fetchUpdateState(url: String): UpdateState {
-        val request = Request.Builder().url(url).build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw Exception("HTTP ${response.code}")
-
-            val body = response.body?.string() ?: throw Exception("Empty body")
-            val appVersion = gson.fromJson(body, AppVersion::class.java)
-            
-            return if (isNewVersion(appVersion.version)) {
-                UpdateState.Available(appVersion)
-            } else {
-                UpdateState.NoUpdate
+                withContext(Dispatchers.Main) { onResult(UpdateState.Error("Check update error: ${e.message}")) }
             }
         }
     }
+    
+    private suspend fun raceRequests(urls: List<String>): String? = coroutineScope {
+        val channel = Channel<String?>(urls.size)
+        
+        val jobs = urls.map { url ->
+            launch {
+                try {
+                    val request = Request.Builder().url(url).build()
+                    client.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            channel.send(response.body?.string())
+                        } else {
+                            channel.send(null)
+                        }
+                    }
+                } catch (e: Exception) {
+                    channel.send(null)
+                }
+            }
+        }
+        
+        var failures = 0
+        var winner: String? = null
+        
+        repeat(urls.size) {
+            val result = channel.receive()
+            if (result != null && winner == null) {
+                winner = result
+                jobs.forEach { it.cancel() } // Cancel other slow requests
+            } else {
+                failures++
+            }
+        }
+        
+        winner
+    }
 
     private fun isNewVersion(remoteVersionStr: String): Boolean {
-        // Remove 'v' prefix if present
         val remoteVersion = remoteVersionStr.removePrefix("v")
         val localVersion = BuildConfig.VERSION_NAME.removePrefix("v")
         
-        // Simple semantic versioning check
         val remoteParts = remoteVersion.split(".").map { it.toIntOrNull() ?: 0 }
         val localParts = localVersion.split(".").map { it.toIntOrNull() ?: 0 }
         
@@ -126,87 +128,115 @@ object UpdateManager {
     }
 
     fun downloadAndInstall(context: Context, version: AppVersion, onProgress: (Float) -> Unit, onError: (String) -> Unit) {
-        val filename = "PDFBooklet-v${version.version}.apk"
-        
-        // Robust URL resolution: Handle both raw and already-proxied URLs
-        val originalUrl = version.downloadUrl
-        var rawUrl = originalUrl
-        var proxyUrl = originalUrl
-        
-        if (originalUrl.contains("mirror.ghproxy.com")) {
-            // Case A: Remote JSON provided a Proxy URL
-            proxyUrl = originalUrl
-            // Attempt to strip proxy to get raw URL
-            rawUrl = originalUrl.replace("https://mirror.ghproxy.com/", "")
-        } else {
-            // Case B: Remote JSON provided a Raw URL
-            // rawUrl is already set to originalUrl
-            if (rawUrl.startsWith("https://raw.githubusercontent.com") || 
-               (rawUrl.startsWith("https://github.com") && rawUrl.contains("/releases/download/"))) {
-                proxyUrl = "https://mirror.ghproxy.com/$rawUrl"
+        scope.launch {
+            try {
+                val originalUrl = version.downloadUrl
+                val candidates = mutableListOf<String>()
+                
+                // 1. ghproxy.net
+                candidates.add("https://ghproxy.net/$originalUrl")
+                
+                // 2. kkgithub
+                if (originalUrl.contains("raw.githubusercontent.com")) {
+                    candidates.add(originalUrl.replace("raw.githubusercontent.com", "raw.kkgithub.com"))
+                } else if (originalUrl.contains("github.com")) {
+                    candidates.add(originalUrl.replace("github.com", "kkgithub.com"))
+                }
+                
+                // 3. Direct
+                candidates.add(originalUrl)
+
+                // Race to find the fastest connected URL
+                val bestUrl = raceForBestUrl(candidates) ?: originalUrl
+                
+                if (!performDownload(context, bestUrl, "PDFBooklet-v${version.version}.apk", onProgress)) {
+                     withContext(Dispatchers.Main) { onError("Download failed") }
+                }
+
+            } catch (e: Exception) {
+                 withContext(Dispatchers.Main) { onError("Download error: ${e.message}") }
             }
         }
-
-        Thread {
-            var success = false
-            
-            // 1. Try Proxy First (Preferred for China)
-            if (proxyUrl != rawUrl) {
-                try {
-                    if (performDownload(context, proxyUrl, filename, onProgress)) {
-                        success = true
-                    }
-                } catch (e: Exception) {
-                    // Ignore proxy error (e.g. DNS failure on VPN), continue to fallback
-                }
-            }
-
-            // 2. Try Raw Fallback (For VPN/Overseas or if Proxy fails)
-            if (!success) {
-                try {
-                    if (performDownload(context, rawUrl, filename, onProgress)) {
-                        // Success
-                    } else {
-                        onError("Download failed from both sources")
-                    }
-                } catch (e: Exception) {
-                    onError("Download error: ${e.message}")
-                }
-            }
-        }.start()
     }
     
-    private fun performDownload(context: Context, url: String, filename: String, onProgress: (Float) -> Unit): Boolean {
-        val request = Request.Builder().url(url).build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return false
-            val body = response.body ?: return false
-            
-            val total = body.contentLength()
-            val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename)
-            
-            val inputStream = body.byteStream()
-            val outputStream = FileOutputStream(file)
-            
-            val buffer = ByteArray(8192)
-            var bytesRead: Int
-            var totalRead: Long = 0
-            
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-                totalRead += bytesRead
-                if (total > 0) {
-                    onProgress(totalRead.toFloat() / total.toFloat())
+    private suspend fun raceForBestUrl(urls: List<String>): String? = coroutineScope {
+         val channel = Channel<String?>(urls.size)
+         
+         val jobs = urls.map { url ->
+             launch {
+                 try {
+                     // Use HEAD request to check connectivity speed without downloading
+                     val request = Request.Builder().url(url).head().build()
+                     client.newCall(request).execute().use { response ->
+                         if (response.isSuccessful) {
+                             channel.send(url)
+                         } else {
+                             channel.send(null)
+                         }
+                     }
+                 } catch (e: Exception) {
+                     channel.send(null)
+                 }
+             }
+         }
+         
+         var failures = 0
+         var winner: String? = null
+         
+         repeat(urls.size) {
+             val result = channel.receive()
+             if (result != null && winner == null) {
+                 winner = result
+                 jobs.forEach { it.cancel() }
+             } else {
+                 failures++
+             }
+         }
+         winner
+    }
+    
+    private suspend fun performDownload(context: Context, url: String, filename: String, onProgress: (Float) -> Unit): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@withContext false
+                    val body = response.body ?: return@withContext false
+                    
+                    val total = body.contentLength()
+                    val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename)
+                    
+                    val inputStream = body.byteStream()
+                    val outputStream = FileOutputStream(file)
+                    
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    var totalRead: Long = 0
+                    
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        outputStream.write(buffer, 0, bytesRead)
+                        totalRead += bytesRead
+                        if (total > 0) {
+                            withContext(Dispatchers.Main) {
+                                onProgress(totalRead.toFloat() / total.toFloat())
+                            }
+                        }
+                    }
+                    
+                    outputStream.flush()
+                    outputStream.close()
+                    inputStream.close()
+                    
+                    withContext(Dispatchers.Main) {
+                        onProgress(1.0f)
+                        installApk(context, file)
+                    }
+                    true
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
-            
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-            
-            onProgress(1.0f)
-            installApk(context, file)
-            return true
         }
     }
 
