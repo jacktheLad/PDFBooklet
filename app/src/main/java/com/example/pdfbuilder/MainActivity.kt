@@ -180,7 +180,7 @@ fun BookletApp(
             onThemeSelected = { viewModel.setAppTheme(it) },
             onShowChangelog = { 
                 showSettings = false 
-                showChangelog = true 
+                viewModel.showUpdateDialog() // Trigger update check/dialog
             },
             onDismiss = { showSettings = false }
         )
@@ -302,15 +302,15 @@ fun BookletApp(
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             ) {
                 BookletSettingsContent(
-                    uiState = uiState,
-                    viewModel = viewModel,
-                    selectedFileName = selectedFileName,
-                    onSelectPdf = onSelectPdf,
-                    onShowUpdateDialog = { viewModel.showUpdateDialog() }
-                )
-            }
+                uiState = uiState,
+                viewModel = viewModel,
+                selectedFileName = selectedFileName,
+                onSelectPdf = onSelectPdf,
+                onOpenSettings = { showSettings = true }
+            )
         }
     }
+}
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -519,7 +519,7 @@ fun BookletSettingsContent(
     viewModel: BookletViewModel,
     selectedFileName: String?,
     onSelectPdf: () -> Unit,
-    onShowUpdateDialog: () -> Unit
+    onOpenSettings: () -> Unit
 ) {
     val config = uiState.config
     val hasNewVersion = uiState.updateState is UpdateManager.UpdateState.Available
@@ -586,34 +586,6 @@ fun BookletSettingsContent(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Row 0: Theme Selection
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("颜色风格", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CompactChip(
-                            selected = uiState.appTheme == AppTheme.MINIMALIST,
-                            onClick = { viewModel.setAppTheme(AppTheme.MINIMALIST) },
-                            label = "简约",
-                            modifier = Modifier.weight(1f)
-                        )
-                        CompactChip(
-                            selected = uiState.appTheme == AppTheme.TECH_DARK,
-                            onClick = { viewModel.setAppTheme(AppTheme.TECH_DARK) },
-                            label = "深色",
-                            modifier = Modifier.weight(1f)
-                        )
-                        CompactChip(
-                            selected = uiState.appTheme == AppTheme.RETRO_PAPER,
-                            onClick = { viewModel.setAppTheme(AppTheme.RETRO_PAPER) },
-                            label = "复古",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
                 // Row 1: Layout Mode & Split Mode
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -749,12 +721,12 @@ fun BookletSettingsContent(
             horizontalArrangement = Arrangement.Center, // Centered
             verticalAlignment = Alignment.CenterVertically
         ) {
-             // Update Log Button with Red Dot
+             // Settings Button with Red Dot (if update available)
             Box {
-                TextButton(onClick = onShowUpdateDialog) {
+                TextButton(onClick = onOpenSettings) {
                     Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (hasNewVersion) "发现新版本" else "设置 & 更新日志")
+                    Text("设置")
                 }
                 
                 if (hasNewVersion) {
@@ -1111,37 +1083,54 @@ fun SettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("设置") },
+        title = { Text("设置", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 // Theme Selection
                 Column {
-                    Text("颜色风格", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("颜色风格", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AppTheme.values().forEach { theme ->
-                            val selected = theme == currentTheme
-                            FilterChip(
-                                selected = selected,
-                                onClick = { onThemeSelected(theme) },
-                                label = { 
-                                    Text(when(theme) {
-                                        AppTheme.RETRO_PAPER -> "复古纸张"
-                                        AppTheme.TECH_DARK -> "科技深色"
-                                        AppTheme.MINIMALIST -> "简约风格"
-                                    })
-                                }
-                            )
-                        }
+                        CompactChip(
+                            selected = currentTheme == AppTheme.MINIMALIST,
+                            onClick = { onThemeSelected(AppTheme.MINIMALIST) },
+                            label = "简约",
+                            modifier = Modifier.weight(1f)
+                        )
+                        CompactChip(
+                            selected = currentTheme == AppTheme.TECH_DARK,
+                            onClick = { onThemeSelected(AppTheme.TECH_DARK) },
+                            label = "深色",
+                            modifier = Modifier.weight(1f)
+                        )
+                        CompactChip(
+                            selected = currentTheme == AppTheme.RETRO_PAPER,
+                            onClick = { onThemeSelected(AppTheme.RETRO_PAPER) },
+                            label = "复古",
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
                 
-                // Update Log
-                Button(
-                    onClick = onShowChangelog,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("查看更新日志")
+                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                // Update & About
+                Column {
+                    Text("关于", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = onShowChangelog,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("检查更新 / 更新日志")
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "当前版本: ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
             }
         },

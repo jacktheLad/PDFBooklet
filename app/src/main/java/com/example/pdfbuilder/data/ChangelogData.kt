@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.0.10",
+            date = "2026-02-05",
+            changes = listOf(
+                "交互优化: 将“颜色风格”设置从主面板移除，移动到独立的设置对话框中。",
+                "界面优化: 独立的设置入口，包含版本信息和更新检查功能。"
+            )
+        ),
+        VersionInfo(
             version = "1.0.9",
             date = "2026-02-05",
             changes = listOf(
