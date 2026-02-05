@@ -229,14 +229,11 @@ fun BookletApp(
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             ) {
                 BookletSettingsContent(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
                     uiState = uiState,
                     viewModel = viewModel,
                     selectedFileName = selectedFileName,
                     onSelectPdf = onSelectPdf,
-                    onSettingsClick = { showSettings = true }
+                    onShowUpdateDialog = { viewModel.showUpdateDialog() }
                 )
             }
         }
@@ -445,27 +442,26 @@ fun PreviewSectionFixed(
 
 @Composable
 fun BookletSettingsContent(
-    modifier: Modifier = Modifier,
     uiState: BookletUiState,
     viewModel: BookletViewModel,
     selectedFileName: String?,
     onSelectPdf: () -> Unit,
-    onSettingsClick: () -> Unit // Add this callback
+    onShowUpdateDialog: () -> Unit
 ) {
-    // Remove local showChangelog since we use the main activity one via settings or a dedicated button
-    
+    val config = uiState.config
     val hasNewVersion = uiState.updateState is UpdateManager.UpdateState.Available
     val widthMm = if (uiState.config.paperOrientation == PaperOrientation.LANDSCAPE) 297f else 210f
     val heightMm = if (uiState.config.paperOrientation == PaperOrientation.LANDSCAPE) 210f else 297f
     val maxMarginMm = if (widthMm < heightMm) widthMm / 4f else heightMm / 4f
 
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        // 1. File Selection
+        // File Selection Card
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -476,19 +472,24 @@ fun BookletSettingsContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = selectedFileName ?: "未选择文件",
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        if (uiState.totalInputPages > 0) {
+                            Text(
+                                text = "共 ${uiState.totalInputPages} 页",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = onSelectPdf,
                         colors = ButtonDefaults.buttonColors(

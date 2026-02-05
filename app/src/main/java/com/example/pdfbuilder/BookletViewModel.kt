@@ -152,6 +152,10 @@ class BookletViewModel(application: Application) : AndroidViewModel(application)
         _uiState.value = _uiState.value.copy(showUpdateDialog = false)
     }
 
+    fun showUpdateDialog() {
+        _uiState.value = _uiState.value.copy(showUpdateDialog = true)
+    }
+
     private fun restoreAppTheme() {
         val prefs = getApplication<Application>().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
         val themeName = prefs.getString(KEY_APP_THEME, AppTheme.MINIMALIST.name)
