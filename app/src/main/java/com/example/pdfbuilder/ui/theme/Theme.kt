@@ -46,15 +46,15 @@ val minimalBtnGenerate = Color(0xFF4CAF50) // Green 500
 val minimalBtnPrint = Color(0xFFFF9800) // Orange 500
 
 // Retro Paper Theme (复古纸张风)
-val primary = Color(0xFF3F51B5) // Indigo 500 (Ink Blue for Select)
+val primary = Color(0xFF5D4037) // Dark Brown (For Chips/Toggles) - Was Indigo
 val onPrimary = Color(0xFFFFFFFF)
-val primaryContainer = Color(0xFFC5CAE9)
-val onPrimaryContainer = Color(0xFF1A237E)
-val secondary = Color(0xFF558B2F) // Light Green 800 (Olive for Generate)
+val primaryContainer = Color(0xFFD7CCC8)
+val onPrimaryContainer = Color(0xFF3E2723)
+val secondary = Color(0xFFA1887F) // Brown 300
 val onSecondary = Color(0xFFFFFFFF)
-val secondaryContainer = Color(0xFFDCEDC8)
-val onSecondaryContainer = Color(0xFF33691E)
-val tertiary = Color(0xFF8D6E63) // Brown 400 (Leather for Print)
+val secondaryContainer = Color(0xFFD7CCC8)
+val onSecondaryContainer = Color(0xFF3E2723)
+val tertiary = Color(0xFF4E342E) // Very Dark Brown
 val onTertiary = Color(0xFFFFFFFF)
 val background = Color(0xFFF2E6D5)
 val onBackground = Color(0xFF3E2723)
@@ -64,17 +64,22 @@ val surfaceVariant = Color(0xFFE6D6C4)
 val onSurfaceVariant = Color(0xFF5D4037)
 val outline = Color(0xFFA1887F)
 
+// Custom Colors for Retro Buttons
+val retroBtnSelect = Color(0xFF3F51B5) // Indigo 500
+val retroBtnGenerate = Color(0xFF558B2F) // Light Green 800
+val retroBtnPrint = Color(0xFF8D6E63) // Brown 400
+
 // Tech Dark Theme (科技感深色)
-val techPrimary = Color(0xFF00B0FF) // Light Blue A400 (Neon Blue for Select)
-val techOnPrimary = Color(0xFF000000)
+val techPrimary = Color(0xFF00838F) // Cyan 800 (For Chips/Toggles) - Was Neon Blue
+val techOnPrimary = Color(0xFFFFFFFF)
 val techPrimaryContainer = Color(0xFF004D40)
 val techOnPrimaryContainer = Color(0xFFE0F2F1)
-val techSecondary = Color(0xFF00E676) // Green A400 (Neon Green for Generate)
-val techOnSecondary = Color(0xFF000000)
+val techSecondary = Color(0xFF2E7D32) // Dark Green
+val techOnSecondary = Color(0xFFFFFFFF)
 val techSecondaryContainer = Color(0xFF1B5E20)
 val techOnSecondaryContainer = Color(0xFFE8F5E9)
-val techTertiary = Color(0xFFFFAB40) // Orange A200 (Neon Orange for Print)
-val techOnTertiary = Color(0xFF000000)
+val techTertiary = Color(0xFFEF6C00) // Dark Orange
+val techOnTertiary = Color(0xFFFFFFFF)
 val techBackground = Color(0xFF121212) // Dark Grey/Black
 val techOnBackground = Color(0xFFE0E0E0)
 // Semi-transparent surface for Tech Theme
@@ -83,6 +88,11 @@ val techOnSurface = Color(0xFFE0E0E0)
 val techSurfaceVariant = Color(0xCC2C2C2C) // 80% opacity variant
 val techOnSurfaceVariant = Color(0xFFB0BEC5)
 val techOutline = Color(0xFF00B0FF)
+
+// Custom Colors for Tech Buttons
+val techBtnSelect = Color(0xFF00B0FF) // Neon Blue
+val techBtnGenerate = Color(0xFF00E676) // Neon Green
+val techBtnPrint = Color(0xFFFFAB40) // Neon Orange
 
 @Composable
 fun PdfSplitterTheme(

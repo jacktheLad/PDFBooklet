@@ -87,54 +87,77 @@ object UpdateManager {
     }
 
     fun downloadAndInstall(context: Context, release: GithubRelease, onProgress: (Float) -> Unit, onError: (String) -> Unit) {
-        val apkAsset = release.assets.find { it.name.endsWith(".apk") }
-        if (apkAsset == null) {
-            onError("No APK found in this release")
-            return
-        }
+        // Construct the raw file URL with proxy prefix to bypass China blocking
+        // We use the tag name to construct the filename, assuming the file is committed to the releases/ folder in the repo
+        // e.g. https://mirror.ghproxy.com/https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.12.apk
+        val tagName = release.tagName // e.g., v1.0.12
+        val filename = "PDF小册子-$tagName.apk"
+        val rawUrl = "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/$filename"
+        val proxyUrl = "https://mirror.ghproxy.com/$rawUrl"
 
         Thread {
             try {
-                val request = Request.Builder().url(apkAsset.downloadUrl).build()
+                val request = Request.Builder().url(proxyUrl).build()
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        onError("Download failed: ${response.code}")
-                        return@use
-                    }
-
-                    val body = response.body ?: run {
-                        onError("Empty response body")
-                        return@use
-                    }
-
-                    val file = File(context.externalCacheDir, apkAsset.name)
-                    val inputStream = body.byteStream()
-                    val outputStream = FileOutputStream(file)
-                    val totalLength = body.contentLength()
-                    
-                    var bytesCopied: Long = 0
-                    val buffer = ByteArray(8 * 1024)
-                    var bytes = inputStream.read(buffer)
-                    
-                    while (bytes >= 0) {
-                        outputStream.write(buffer, 0, bytes)
-                        bytesCopied += bytes
-                        if (totalLength > 0) {
-                            onProgress(bytesCopied.toFloat() / totalLength)
+                        // Fallback to direct URL if proxy fails (though proxy is usually more reliable in CN)
+                        val fallbackRequest = Request.Builder().url(rawUrl).build()
+                        client.newCall(fallbackRequest).execute().use { fallbackResponse ->
+                             if (!fallbackResponse.isSuccessful) {
+                                onError("Download failed: ${response.code} / ${fallbackResponse.code}")
+                                return@use
+                             }
+                             handleDownloadResponse(context, fallbackResponse, filename, onProgress, onError)
                         }
-                        bytes = inputStream.read(buffer)
+                        return@use
                     }
-                    
-                    outputStream.close()
-                    inputStream.close()
-                    
-                    // Install on main thread
-                    installApk(context, file)
+                    handleDownloadResponse(context, response, filename, onProgress, onError)
                 }
             } catch (e: Exception) {
-                onError(e.message ?: "Download error")
+                onError("Download error: ${e.message}")
             }
         }.start()
+    }
+
+    private fun handleDownloadResponse(
+        context: Context, 
+        response: okhttp3.Response, 
+        filename: String,
+        onProgress: (Float) -> Unit, 
+        onError: (String) -> Unit
+    ) {
+        val body = response.body
+        if (body == null) {
+            onError("Empty response body")
+            return
+        }
+
+        try {
+            val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename)
+            val inputStream = body.byteStream()
+            val outputStream = FileOutputStream(file)
+            val totalLength = body.contentLength()
+            
+            var bytesCopied: Long = 0
+            val buffer = ByteArray(8 * 1024)
+            var bytes = inputStream.read(buffer)
+            
+            while (bytes >= 0) {
+                outputStream.write(buffer, 0, bytes)
+                bytesCopied += bytes
+                if (totalLength > 0) {
+                    onProgress(bytesCopied.toFloat() / totalLength)
+                }
+                bytes = inputStream.read(buffer)
+            }
+            
+            outputStream.close()
+            inputStream.close()
+            
+            installApk(context, file)
+        } catch (e: Exception) {
+            onError("Save/Install error: ${e.message}")
+        }
     }
 
     private fun installApk(context: Context, file: File) {

@@ -574,8 +574,12 @@ fun BookletSettingsContent(
                     Button(
                         onClick = onSelectPdf,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (uiState.appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnSelect else MaterialTheme.colorScheme.primary,
-                            contentColor = if (uiState.appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onPrimary
+                            containerColor = when (uiState.appTheme) {
+                                AppTheme.MINIMALIST -> com.example.pdfbuilder.ui.theme.minimalBtnSelect
+                                AppTheme.RETRO_PAPER -> com.example.pdfbuilder.ui.theme.retroBtnSelect
+                                AppTheme.TECH_DARK -> com.example.pdfbuilder.ui.theme.techBtnSelect
+                            },
+                            contentColor = Color.White
                         )
                     ) {
                         Text("选择文件")
@@ -834,8 +838,12 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnGenerate else MaterialTheme.colorScheme.secondary,
-                    contentColor = if (appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onSecondary
+                    containerColor = when (appTheme) {
+                        AppTheme.MINIMALIST -> com.example.pdfbuilder.ui.theme.minimalBtnGenerate
+                        AppTheme.RETRO_PAPER -> com.example.pdfbuilder.ui.theme.retroBtnGenerate
+                        AppTheme.TECH_DARK -> com.example.pdfbuilder.ui.theme.techBtnGenerate
+                    },
+                    contentColor = Color.White
                 )
             ) {
                 Icon(painterResource(id = android.R.drawable.ic_menu_save), contentDescription = null)
@@ -850,8 +858,12 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnPrint else MaterialTheme.colorScheme.tertiary,
-                    contentColor = if (appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onTertiary
+                    containerColor = when (appTheme) {
+                        AppTheme.MINIMALIST -> com.example.pdfbuilder.ui.theme.minimalBtnPrint
+                        AppTheme.RETRO_PAPER -> com.example.pdfbuilder.ui.theme.retroBtnPrint
+                        AppTheme.TECH_DARK -> com.example.pdfbuilder.ui.theme.techBtnPrint
+                    },
+                    contentColor = Color.White
                 )
             ) {
                 Icon(painterResource(id = android.R.drawable.ic_menu_send), contentDescription = null)
