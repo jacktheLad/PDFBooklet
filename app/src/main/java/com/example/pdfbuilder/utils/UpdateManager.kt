@@ -13,8 +13,11 @@ import java.io.File
 import java.io.FileOutputStream
 
 object UpdateManager {
-    // Use ghproxy to access version.json on main branch for fast, reliable checks in China
-    private const val VERSION_JSON_URL = "https://mirror.ghproxy.com/https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
+    // 1. First try: ghproxy (Fast in China)
+    private const val VERSION_JSON_URL_PROXY = "https://mirror.ghproxy.com/https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
+    // 2. Fallback: Raw GitHub (For VPN/Overseas where ghproxy might be blocked or slow)
+    private const val VERSION_JSON_URL_RAW = "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/version.json"
+    
     private val client = OkHttpClient()
     private val gson = Gson()
 
@@ -32,34 +35,48 @@ object UpdateManager {
         onResult(UpdateState.Checking)
         
         Thread {
+            // Strategy: Try Proxy -> If fail, Try Raw
+            var success = false
+            
+            // 1. Try Proxy
             try {
-                val request = Request.Builder()
-                    .url(VERSION_JSON_URL)
-                    .build()
-
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        onResult(UpdateState.Error("Failed to check updates: ${response.code}"))
-                        return@use
-                    }
-
-                    val body = response.body?.string()
-                    if (body == null) {
-                        onResult(UpdateState.Error("Empty response"))
-                        return@use
-                    }
-
-                    val appVersion = gson.fromJson(body, AppVersion::class.java)
-                    if (isNewVersion(appVersion.version)) {
-                        onResult(UpdateState.Available(appVersion))
-                    } else {
-                        onResult(UpdateState.NoUpdate)
-                    }
+                if (checkUrl(VERSION_JSON_URL_PROXY, onResult)) {
+                    success = true
                 }
             } catch (e: Exception) {
-                onResult(UpdateState.Error(e.message ?: "Unknown error"))
+                // Ignore proxy error, continue to fallback
+            }
+
+            // 2. If Proxy failed, Try Raw
+            if (!success) {
+                try {
+                    if (checkUrl(VERSION_JSON_URL_RAW, onResult)) {
+                        success = true
+                    } else {
+                        onResult(UpdateState.Error("Failed to check updates from both sources"))
+                    }
+                } catch (e: Exception) {
+                    onResult(UpdateState.Error("Update check failed: ${e.message}"))
+                }
             }
         }.start()
+    }
+    
+    private fun checkUrl(url: String, onResult: (UpdateState) -> Unit): Boolean {
+        val request = Request.Builder().url(url).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return false
+
+            val body = response.body?.string() ?: return false
+            val appVersion = gson.fromJson(body, AppVersion::class.java)
+            
+            if (isNewVersion(appVersion.version)) {
+                onResult(UpdateState.Available(appVersion))
+            } else {
+                onResult(UpdateState.NoUpdate)
+            }
+            return true
+        }
     }
 
     private fun isNewVersion(remoteVersionStr: String): Boolean {
@@ -85,63 +102,88 @@ object UpdateManager {
     }
 
     fun downloadAndInstall(context: Context, version: AppVersion, onProgress: (Float) -> Unit, onError: (String) -> Unit) {
-        // The downloadUrl in version.json should be the full URL.
-        // We ensure it goes through proxy if needed for China access.
+        val filename = "PDFBooklet-v${version.version}.apk"
         
-        var downloadUrl = version.downloadUrl
-        if (downloadUrl.startsWith("https://raw.githubusercontent.com")) {
-            downloadUrl = "https://mirror.ghproxy.com/$downloadUrl"
-        } else if (downloadUrl.startsWith("https://github.com") && downloadUrl.contains("/releases/download/")) {
-             // GitHub releases download link is also slow in China, proxy it
-             downloadUrl = "https://mirror.ghproxy.com/$downloadUrl"
+        // Robust URL resolution: Handle both raw and already-proxied URLs
+        val originalUrl = version.downloadUrl
+        var rawUrl = originalUrl
+        var proxyUrl = originalUrl
+        
+        if (originalUrl.contains("mirror.ghproxy.com")) {
+            // Case A: Remote JSON provided a Proxy URL
+            proxyUrl = originalUrl
+            // Attempt to strip proxy to get raw URL
+            rawUrl = originalUrl.replace("https://mirror.ghproxy.com/", "")
+        } else {
+            // Case B: Remote JSON provided a Raw URL
+            // rawUrl is already set to originalUrl
+            if (rawUrl.startsWith("https://raw.githubusercontent.com") || 
+               (rawUrl.startsWith("https://github.com") && rawUrl.contains("/releases/download/"))) {
+                proxyUrl = "https://mirror.ghproxy.com/$rawUrl"
+            }
         }
 
-        val filename = "PDFBooklet-v${version.version}.apk"
-
         Thread {
-            try {
-                val request = Request.Builder().url(downloadUrl).build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        onError("Download failed: ${response.code}")
-                        return@use
+            var success = false
+            
+            // 1. Try Proxy First (Preferred for China)
+            if (proxyUrl != rawUrl) {
+                try {
+                    if (performDownload(context, proxyUrl, filename, onProgress)) {
+                        success = true
                     }
-
-                    val body = response.body
-                    if (body == null) {
-                        onError("Empty response body")
-                        return@use
-                    }
-
-                    val total = body.contentLength()
-                    val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename)
-                    
-                    val inputStream = body.byteStream()
-                    val outputStream = FileOutputStream(file)
-                    
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-                    var totalRead: Long = 0
-                    
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        outputStream.write(buffer, 0, bytesRead)
-                        totalRead += bytesRead
-                        if (total > 0) {
-                            onProgress(totalRead.toFloat() / total.toFloat())
-                        }
-                    }
-                    
-                    outputStream.flush()
-                    outputStream.close()
-                    inputStream.close()
-                    
-                    onProgress(1.0f)
-                    installApk(context, file)
+                } catch (e: Exception) {
+                    // Ignore proxy error (e.g. DNS failure on VPN), continue to fallback
                 }
-            } catch (e: Exception) {
-                onError(e.message ?: "Download error")
+            }
+
+            // 2. Try Raw Fallback (For VPN/Overseas or if Proxy fails)
+            if (!success) {
+                try {
+                    if (performDownload(context, rawUrl, filename, onProgress)) {
+                        // Success
+                    } else {
+                        onError("Download failed from both sources")
+                    }
+                } catch (e: Exception) {
+                    onError("Download error: ${e.message}")
+                }
             }
         }.start()
+    }
+    
+    private fun performDownload(context: Context, url: String, filename: String, onProgress: (Float) -> Unit): Boolean {
+        val request = Request.Builder().url(url).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return false
+            val body = response.body ?: return false
+            
+            val total = body.contentLength()
+            val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), filename)
+            
+            val inputStream = body.byteStream()
+            val outputStream = FileOutputStream(file)
+            
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            var totalRead: Long = 0
+            
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                outputStream.write(buffer, 0, bytesRead)
+                totalRead += bytesRead
+                if (total > 0) {
+                    onProgress(totalRead.toFloat() / total.toFloat())
+                }
+            }
+            
+            outputStream.flush()
+            outputStream.close()
+            inputStream.close()
+            
+            onProgress(1.0f)
+            installApk(context, file)
+            return true
+        }
     }
 
     private fun installApk(context: Context, file: File) {

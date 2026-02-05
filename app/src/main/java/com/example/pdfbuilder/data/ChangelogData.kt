@@ -9,6 +9,15 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.0.17",
+            date = "2026-02-05",
+            changes = listOf(
+                "网络优化: 新增智能双通道更新机制，自动在“国内加速”与“GitHub直连”间切换。",
+                "修复: 解决开启 VPN 时无法连接加速节点导致更新失败的问题。",
+                "体验提升: 无论身处国内还是海外（或开启代理），都能获得最稳定的更新体验。"
+            )
+        ),
+        VersionInfo(
             version = "1.0.16",
             date = "2026-02-05",
             changes = listOf(

@@ -1,6 +1,6 @@
 {
-  "version": "1.0.16",
-  "changelog": "紧急修复: 解决部分设备检测到更新但下载后仍为旧版本的问题。\n系统升级: 全面切换至高速更新通道，确保更新文件的一致性与完整性。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.16.apk",
+  "version": "1.0.17",
+  "changelog": "网络优化: 新增智能双通道更新机制，自动在“国内加速”与“GitHub直连”间切换。\n修复: 解决开启 VPN 时无法连接加速节点导致更新失败的问题。\n体验提升: 无论身处国内还是海外（或开启代理），都能获得最稳定的更新体验。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.17.apk",
   "date": "2026-02-05"
 }
