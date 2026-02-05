@@ -190,9 +190,82 @@ fun BookletApp(
         ChangelogDialog(onDismiss = { showChangelog = false })
     }
 
-    // Auto-show changelog on new version
+    // Update Dialog Logic
     if (uiState.showUpdateDialog) {
-        ChangelogDialog(onDismiss = { viewModel.dismissUpdateDialog() })
+        val currentUpdateState = uiState.updateState
+        
+        when (currentUpdateState) {
+            is UpdateManager.UpdateState.Available -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissUpdateDialog() },
+                    title = { Text("发现新版本 " + currentUpdateState.release.tagName) },
+                    text = {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            Text(
+                                text = currentUpdateState.release.body,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "发布时间: ${currentUpdateState.release.publishedAt.take(10)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.downloadUpdate(currentUpdateState.release)
+                            }
+                        ) {
+                            Text("立即更新")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                            Text("暂不更新")
+                        }
+                    }
+                )
+            }
+            is UpdateManager.UpdateState.Downloading -> {
+                AlertDialog(
+                    onDismissRequest = { /* Prevent dismiss */ },
+                    title = { Text("正在下载更新...") },
+                    text = {
+                        Column {
+                            LinearProgressIndicator(
+                                progress = currentUpdateState.progress,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${(currentUpdateState.progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
+                    confirmButton = {}
+                )
+            }
+            is UpdateManager.UpdateState.Error -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissUpdateDialog() },
+                    title = { Text("更新失败") },
+                    text = { Text(currentUpdateState.message) },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                            Text("确定")
+                        }
+                    }
+                )
+            }
+            else -> {
+                // Show local changelog if no update available
+                ChangelogDialog(onDismiss = { viewModel.dismissUpdateDialog() })
+            }
+        }
     }
 
     Scaffold(
@@ -513,6 +586,34 @@ fun BookletSettingsContent(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Row 0: Theme Selection
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("颜色风格", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CompactChip(
+                            selected = uiState.appTheme == AppTheme.MINIMALIST,
+                            onClick = { viewModel.setAppTheme(AppTheme.MINIMALIST) },
+                            label = "简约",
+                            modifier = Modifier.weight(1f)
+                        )
+                        CompactChip(
+                            selected = uiState.appTheme == AppTheme.TECH_DARK,
+                            onClick = { viewModel.setAppTheme(AppTheme.TECH_DARK) },
+                            label = "深色",
+                            modifier = Modifier.weight(1f)
+                        )
+                        CompactChip(
+                            selected = uiState.appTheme == AppTheme.RETRO_PAPER,
+                            onClick = { viewModel.setAppTheme(AppTheme.RETRO_PAPER) },
+                            label = "复古",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
                 // Row 1: Layout Mode & Split Mode
                 Row(
                     modifier = Modifier.fillMaxWidth(),

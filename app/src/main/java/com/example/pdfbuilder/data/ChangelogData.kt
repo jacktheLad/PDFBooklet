@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.0.9",
+            date = "2026-02-05",
+            changes = listOf(
+                "问题修复: 恢复了设置界面中丢失的“主题切换”功能。",
+                "问题修复: 修复了新版本检测弹窗中缺失“立即更新”下载按钮的问题。"
+            )
+        ),
+        VersionInfo(
             version = "1.0.8",
             date = "2026-02-05",
             changes = listOf(
