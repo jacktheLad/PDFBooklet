@@ -9,6 +9,15 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.0.13",
+            date = "2026-02-05",
+            changes = listOf(
+                "更新优化: 针对国内网络环境优化更新下载速度，解决超时问题。",
+                "修复: 修复新版本下载链接可能指向旧版本的问题。",
+                "修复: 优化更新日志显示，避免显示乱码或链接路径。"
+            )
+        ),
+        VersionInfo(
             version = "1.0.12",
             date = "2026-02-05",
             changes = listOf(

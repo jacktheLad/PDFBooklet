@@ -201,8 +201,15 @@ fun BookletApp(
                     title = { Text("发现新版本 " + currentUpdateState.release.tagName) },
                     text = {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            // If body is empty or looks like a URL/Path, show a friendly default message
+                            val displayText = if (currentUpdateState.release.body.isNullOrBlank() || currentUpdateState.release.body.startsWith("http")) {
+                                "新版本已发布！\n包含多项功能优化与问题修复，建议更新。"
+                            } else {
+                                currentUpdateState.release.body
+                            }
+                            
                             Text(
-                                text = currentUpdateState.release.body,
+                                text = displayText,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.height(16.dp))
