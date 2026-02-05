@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 import com.example.pdfbuilder.ui.theme.AppTheme
+import com.example.pdfbuilder.utils.UpdateManager
+import com.example.pdfbuilder.data.GithubRelease
 
 enum class PrintType {
     SINGLE_SIDED, // Fronts then Backs
@@ -85,7 +87,10 @@ data class BookletUiState(
     val appTheme: AppTheme = AppTheme.MINIMALIST,
     
     // Update Dialog State
-    val showUpdateDialog: Boolean = false
+    val showUpdateDialog: Boolean = false,
+    
+    // GitHub Update State
+    val updateState: UpdateManager.UpdateState = UpdateManager.UpdateState.Idle
 )
 
 class BookletViewModel(application: Application) : AndroidViewModel(application) {
@@ -105,6 +110,31 @@ class BookletViewModel(application: Application) : AndroidViewModel(application)
         restoreLastUri()
         restoreAppTheme()
         // checkAppVersion() // Disable auto-show changelog on update
+        checkForUpdates()
+    }
+
+    private fun checkForUpdates() {
+        UpdateManager.checkForUpdate { state ->
+            _uiState.value = _uiState.value.copy(updateState = state)
+        }
+    }
+    
+    fun downloadUpdate(release: GithubRelease) {
+        val context = getApplication<Application>()
+        UpdateManager.downloadAndInstall(
+            context, 
+            release,
+            onProgress = { progress ->
+                _uiState.value = _uiState.value.copy(
+                    updateState = UpdateManager.UpdateState.Downloading(progress)
+                )
+            },
+            onError = { error ->
+                _uiState.value = _uiState.value.copy(
+                    updateState = UpdateManager.UpdateState.Error(error)
+                )
+            }
+        )
     }
 
     private fun checkAppVersion() {

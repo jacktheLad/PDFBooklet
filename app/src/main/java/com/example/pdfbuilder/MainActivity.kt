@@ -64,6 +64,7 @@ import com.example.pdfbuilder.ui.theme.PdfSplitterTheme
 import com.example.pdfbuilder.ui.theme.AppTheme
 import com.example.pdfbuilder.util.SafUtils
 import com.example.pdfbuilder.data.ChangelogData
+import com.example.pdfbuilder.utils.UpdateManager
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -210,13 +211,13 @@ fun BookletApp(
             
             // 1. Top Fixed Preview Section
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.40f)
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                PreviewSectionFixed(uiState, viewModel, onSettingsClick = { showSettings = true })
-            }
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.40f)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            PreviewSectionFixed(uiState, viewModel, onSettingsClick = { showSettings = true })
+        }
 
             // 2. Bottom Scrollable Settings Section
             Box(
@@ -453,6 +454,7 @@ fun BookletSettingsContent(
 ) {
     // Remove local showChangelog since we use the main activity one via settings or a dedicated button
     
+    val hasNewVersion = uiState.updateState is UpdateManager.UpdateState.Available
     val widthMm = if (uiState.config.paperOrientation == PaperOrientation.LANDSCAPE) 297f else 210f
     val heightMm = if (uiState.config.paperOrientation == PaperOrientation.LANDSCAPE) 210f else 297f
     val maxMarginMm = if (widthMm < heightMm) widthMm / 4f else heightMm / 4f
@@ -645,10 +647,24 @@ fun BookletSettingsContent(
             horizontalArrangement = Arrangement.Center, // Centered
             verticalAlignment = Alignment.CenterVertically
         ) {
-             TextButton(onClick = onSettingsClick) {
-                Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("设置 & 更新日志")
+             // Update Log Button with Red Dot
+            Box {
+                TextButton(onClick = onShowUpdateDialog) {
+                    Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (hasNewVersion) "发现新版本" else "设置 & 更新日志")
+                }
+                
+                if (hasNewVersion) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 4.dp, y = (-4).dp)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color.Red)
+                            .align(Alignment.TopEnd)
+                    )
+                }
             }
         }
 
