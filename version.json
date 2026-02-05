@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "changelog": "功能优化: 将“检查更新”与“更新日志”功能入口拆分为独立按钮，操作更便捷。\n界面微调: 优化设置页面布局。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.0.apk",
+  "version": "1.1.1",
+  "changelog": "体验修复: 修正了“检查更新”按钮的交互逻辑，现在无更新时会提示“已是最新版本”，不再错误弹出更新日志。\n逻辑优化: 优化更新检测的状态反馈，增加“正在检查”和“已是最新”的明确提示。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.1.apk",
   "date": "2026-02-05"
 }
