@@ -21,24 +21,24 @@ enum class AppTheme {
     MINIMALIST // New Minimalist Theme
 }
 
-// Minimalist Theme (简约风格)
-val minimalPrimary = Color(0xFF424242) // Dark Grey (For Chips/Toggles)
+// Minimalist Theme (简约风格) - Premium Slate Blue
+val minimalPrimary = Color(0xFF455A64) // Blue Grey 700 (Premium Slate)
 val minimalOnPrimary = Color(0xFFFFFFFF)
-val minimalPrimaryContainer = Color(0xFFE0E0E0)
-val minimalOnPrimaryContainer = Color(0xFF212121)
-val minimalSecondary = Color(0xFF757575) // Grey
+val minimalPrimaryContainer = Color(0xFFCFD8DC) // Blue Grey 100
+val minimalOnPrimaryContainer = Color(0xFF263238) // Blue Grey 900
+val minimalSecondary = Color(0xFF607D8B) // Blue Grey 500
 val minimalOnSecondary = Color(0xFFFFFFFF)
-val minimalSecondaryContainer = Color(0xFFEEEEEE)
-val minimalOnSecondaryContainer = Color(0xFF424242)
-val minimalTertiary = Color(0xFF616161) // Grey
+val minimalSecondaryContainer = Color(0xFFECEFF1) // Blue Grey 50
+val minimalOnSecondaryContainer = Color(0xFF37474F) // Blue Grey 800
+val minimalTertiary = Color(0xFF546E7A) // Blue Grey 600
 val minimalOnTertiary = Color(0xFFFFFFFF)
 val minimalBackground = Color(0xFFFFFFFF) // Pure White
 val minimalOnBackground = Color(0xFF000000)
-val minimalSurface = Color(0xFFF5F5F5) // Very Light Grey
+val minimalSurface = Color(0xFFFAFAFA) // Very Light Grey/White
 val minimalOnSurface = Color(0xFF000000)
-val minimalSurfaceVariant = Color(0xFFEEEEEE)
-val minimalOnSurfaceVariant = Color(0xFF424242)
-val minimalOutline = Color(0xFFBDBDBD)
+val minimalSurfaceVariant = Color(0xFFECEFF1) // Blue Grey 50
+val minimalOnSurfaceVariant = Color(0xFF455A64)
+val minimalOutline = Color(0xFF90A4AE) // Blue Grey 300
 
 // Custom Colors for Minimalist Buttons (To make them pop)
 val minimalBtnSelect = Color(0xFF2196F3) // Blue 500

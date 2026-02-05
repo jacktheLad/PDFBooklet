@@ -1,6 +1,6 @@
 {
-  "version": "1.0.17",
-  "changelog": "网络优化: 新增智能双通道更新机制，自动在“国内加速”与“GitHub直连”间切换。\n修复: 解决开启 VPN 时无法连接加速节点导致更新失败的问题。\n体验提升: 无论身处国内还是海外（或开启代理），都能获得最稳定的更新体验。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.17.apk",
+  "version": "1.0.18",
+  "changelog": "视觉升级: 简约风格默认主题色由沉闷的灰色升级为高级的「莫兰迪蓝灰」，更显质感。\n体验优化: 优化了界面色彩对比度，视觉体验更舒适。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.0.18.apk",
   "date": "2026-02-05"
 }
