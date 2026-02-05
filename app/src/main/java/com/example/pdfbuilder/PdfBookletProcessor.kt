@@ -785,7 +785,7 @@ class PdfBookletProcessor(private val context: Context) {
             }
         }
         
-        val density = 2f // Scale factor for quality
+        val density = 4.5f // Scale factor for quality (approx 324 DPI)
         
         val bitmapW = (contentRect.width() * density).toInt().coerceAtLeast(1)
         val bitmapH = (contentRect.height() * density).toInt().coerceAtLeast(1)

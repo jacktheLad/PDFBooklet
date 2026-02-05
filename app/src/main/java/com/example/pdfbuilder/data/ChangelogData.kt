@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.3",
+            date = "2026-02-05",
+            changes = listOf(
+                "画质升级: 将生成 PDF 的分辨率从 144 DPI 提升至 324 DPI (Retina级)，彻底解决打印模糊问题。",
+                "体验优化: 优化了部分 UI 细节。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.2",
             date = "2026-02-05",
             changes = listOf(

@@ -1,6 +1,6 @@
 {
-  "version": "1.1.2",
-  "changelog": "安装修复: 修复下载完成后无法自动调起安装的问题 (FileProvider配置修正)。\n稳定性提升: 下载超时时间从30秒延长至60秒，并增加下载失败自动切换线路的重试机制。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.2.apk",
+  "version": "1.1.3",
+  "changelog": "画质升级: 将生成 PDF 的分辨率从 144 DPI 提升至 324 DPI (Retina级)，彻底解决打印模糊问题。\n体验优化: 优化了部分 UI 细节。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.3.apk",
   "date": "2026-02-05"
 }
