@@ -566,8 +566,8 @@ fun BookletSettingsContent(
                     Button(
                         onClick = onSelectPdf,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary, // Blue (Minimalist) / Brown (Retro) / Cyan (Tech)
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = if (uiState.appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnSelect else MaterialTheme.colorScheme.primary,
+                            contentColor = if (uiState.appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text("选择文件")
@@ -825,8 +825,8 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary, // Green (Minimalist)
-                    contentColor = MaterialTheme.colorScheme.onSecondary
+                    containerColor = if (uiState.appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnGenerate else MaterialTheme.colorScheme.secondary,
+                    contentColor = if (uiState.appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onSecondary
                 )
             ) {
                 Icon(painterResource(id = android.R.drawable.ic_menu_save), contentDescription = null)
@@ -841,8 +841,8 @@ fun BottomActionBar(
                 enabled = enabled,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary, // Orange (Minimalist)
-                    contentColor = MaterialTheme.colorScheme.onTertiary
+                    containerColor = if (uiState.appTheme == AppTheme.MINIMALIST) com.example.pdfbuilder.ui.theme.minimalBtnPrint else MaterialTheme.colorScheme.tertiary,
+                    contentColor = if (uiState.appTheme == AppTheme.MINIMALIST) Color.White else MaterialTheme.colorScheme.onTertiary
                 )
             ) {
                 Icon(painterResource(id = android.R.drawable.ic_menu_send), contentDescription = null)
