@@ -9,6 +9,16 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.5",
+            date = "2026-02-07",
+            changes = listOf(
+                "兼容性修复: 解决鸿蒙系统及部分机型点击打印无反应的问题，新增自动切换至外部应用（如WPS）打印的机制。",
+                "画质增强: 强制启用 324 DPI (4.5f) 高清渲染用于打印任务，确保输出文件清晰锐利。",
+                "排版优化: 改进分割算法，采用“以装订边为基准”的智能缩放策略，最大化利用纸张空间。",
+                "体验提升: 打印生成过程中增加加载提示，避免误以为程序卡死。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.4",
             date = "2026-02-05",
             changes = listOf(

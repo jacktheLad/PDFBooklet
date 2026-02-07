@@ -136,14 +136,17 @@ class MainActivity : ComponentActivity() {
                             createDocumentLauncher.launch(name)
                         }
                     },
-                    onPrint = { option ->
+                    onPrint = { option, onStart, onSuccess, onError ->
                         val uri = uiState.sourceUri ?: return@BookletApp
                         doBookletPrint(
                             context = context,
                             sourceUri = uri,
                             config = uiState.config,
-                            option = option
-                        ) { viewModel.notifyError(it) }
+                            option = option,
+                            onStart = onStart,
+                            onSuccess = onSuccess,
+                            onError = onError
+                        )
                     }
                 )
             }
@@ -154,10 +157,10 @@ class MainActivity : ComponentActivity() {
 enum class BookletPrintOption(val label: String, val description: String) {
     DOUBLE_SIDED("双面(顺序)", "正反面顺序打印"),
     DOUBLE_SIDED_REVERSE("双面(逆序)", "正反面逆序打印"),
-    SINGLE_ODD("正面(奇数)", "只打印奇数页"),
-    SINGLE_ODD_REVERSE("正面(逆序)", "逆序打印奇数页"),
-    SINGLE_EVEN("背面(偶数)", "只打印偶数页"),
-    SINGLE_EVEN_REVERSE("背面(逆序)", "逆序打印偶数页")
+    SINGLE_ODD("正面(顺序)", "只打印正面(奇数页)"),
+    SINGLE_ODD_REVERSE("正面(逆序)", "逆序打印正面(奇数页)"),
+    SINGLE_EVEN("背面(顺序)", "只打印背面(偶数页)"),
+    SINGLE_EVEN_REVERSE("背面(逆序)", "逆序打印背面(偶数页)")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -169,7 +172,7 @@ fun BookletApp(
     snackbarHostState: SnackbarHostState,
     onSelectPdf: () -> Unit,
     onExport: () -> Unit,
-    onPrint: (BookletPrintOption) -> Unit
+    onPrint: (BookletPrintOption, () -> Unit, () -> Unit, (String) -> Unit) -> Unit
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var showChangelog by remember { mutableStateOf(false) }
@@ -308,9 +311,12 @@ fun BookletApp(
         bottomBar = {
             BottomActionBar(
                 onExport = onExport,
-                onPrint = { onPrint(it) },
+                onPrint = { option, onStart, onSuccess, onError ->
+                    onPrint(option, onStart, onSuccess, onError)
+                },
                 enabled = uiState.sourceUri != null && !uiState.isProcessing,
-                appTheme = uiState.appTheme
+                appTheme = uiState.appTheme,
+                onError = { viewModel.notifyError(it) }
             )
         }
     ) { paddingValues ->
@@ -839,12 +845,29 @@ fun ChangelogDialog(onDismiss: () -> Unit) {
 @Composable
 fun BottomActionBar(
     onExport: () -> Unit,
-    onPrint: (BookletPrintOption) -> Unit,
+    onPrint: (BookletPrintOption, () -> Unit, () -> Unit, (String) -> Unit) -> Unit, // Updated signature
     enabled: Boolean,
-    appTheme: AppTheme
+    appTheme: AppTheme,
+    onError: (String) -> Unit // Need error callback
 ) {
     var showPrintDialog by remember { mutableStateOf(false) }
     var selectedPrintOption by remember { mutableStateOf(BookletPrintOption.DOUBLE_SIDED) }
+    var isPrinting by remember { mutableStateOf(false) } // Loading state
+
+    if (isPrinting) {
+        AlertDialog(
+            onDismissRequest = { /* Cannot dismiss */ },
+            title = { Text("正在处理打印任务...") },
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text("生成高清文件并调用打印服务")
+                }
+            },
+            confirmButton = {}
+        )
+    }
 
     Surface(
         tonalElevation = 8.dp,
@@ -906,7 +929,16 @@ fun BottomActionBar(
             onOptionSelected = { selectedPrintOption = it },
             onConfirm = {
                 showPrintDialog = false
-                onPrint(selectedPrintOption)
+                // Trigger print with local callbacks
+                onPrint(
+                    selectedPrintOption,
+                    { isPrinting = true }, // onStart
+                    { isPrinting = false }, // onSuccess
+                    { errorMsg -> // onError
+                        isPrinting = false
+                        onError(errorMsg)
+                    }
+                )
             },
             onDismiss = { showPrintDialog = false }
         )
@@ -1220,10 +1252,13 @@ fun doBookletPrint(
     sourceUri: Uri,
     config: BookletConfig,
     option: BookletPrintOption,
+    onStart: () -> Unit,
+    onSuccess: () -> Unit,
     onError: (String) -> Unit
 ) {
     val coroutineScope = CoroutineScope(Dispatchers.Main)
     coroutineScope.launch {
+        onStart() // Show loading
         try {
             // Map BookletPrintOption to PrintSubset and reverse flag
             val (subset, reverse) = when (option) {
@@ -1237,10 +1272,9 @@ fun doBookletPrint(
 
             // Create temp file
             val outputDir = context.cacheDir
-            val outputFile = File(outputDir, "print_temp.pdf")
-            val outputUri = Uri.fromFile(outputFile)
+            val outputFile = File(outputDir, "print_job.pdf")
             
-            // Generate PDF
+            // Generate PDF (High Quality for Print)
             val processor = PdfBookletProcessor(context)
             withContext(Dispatchers.IO) {
                 FileOutputStream(outputFile).use { outputStream ->
@@ -1249,56 +1283,77 @@ fun doBookletPrint(
                         outputStream = outputStream,
                         config = config,
                         subset = subset,
-                        reverseOrder = reverse
+                        reverseOrder = reverse,
+                        renderDensity = 4.5f // Ensure high resolution for print
                     )
                 }
             }
 
-            // Print
-            val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
-            val printAdapter = object : PrintDocumentAdapter() {
-                override fun onLayout(
-                    oldAttributes: PrintAttributes?,
-                    newAttributes: PrintAttributes?,
-                    cancellationSignal: CancellationSignal?,
-                    callback: LayoutResultCallback?,
-                    extras: Bundle?
-                ) {
-                    if (cancellationSignal?.isCanceled == true) {
-                        callback?.onLayoutCancelled()
-                        return
-                    }
-                    val info = android.print.PrintDocumentInfo.Builder("print_job.pdf")
-                        .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                        .setPageCount(android.print.PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
-                        .build()
-                    callback?.onLayoutFinished(info, true)
-                }
-
-                override fun onWrite(
-                    pages: Array<out android.print.PageRange>?,
-                    destination: ParcelFileDescriptor?,
-                    cancellationSignal: CancellationSignal?,
-                    callback: WriteResultCallback?
-                ) {
-                    if (cancellationSignal?.isCanceled == true) {
-                        callback?.onWriteCancelled()
-                        return
-                    }
-                    try {
-                        FileInputStream(outputFile).use { input ->
-                            FileOutputStream(destination?.fileDescriptor).use { output ->
-                                input.copyTo(output)
-                            }
+            // 1. Try System Print Manager first
+            try {
+                val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
+                val printAdapter = object : PrintDocumentAdapter() {
+                    override fun onLayout(
+                        oldAttributes: PrintAttributes?,
+                        newAttributes: PrintAttributes?,
+                        cancellationSignal: CancellationSignal?,
+                        callback: LayoutResultCallback?,
+                        extras: Bundle?
+                    ) {
+                        if (cancellationSignal?.isCanceled == true) {
+                            callback?.onLayoutCancelled()
+                            return
                         }
-                        callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-                    } catch (e: Exception) {
-                        callback?.onWriteFailed(e.message)
+                        val info = android.print.PrintDocumentInfo.Builder("print_job.pdf")
+                            .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                            .setPageCount(android.print.PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
+                            .build()
+                        callback?.onLayoutFinished(info, true)
                     }
+
+                    override fun onWrite(
+                        pages: Array<out android.print.PageRange>?,
+                        destination: ParcelFileDescriptor?,
+                        cancellationSignal: CancellationSignal?,
+                        callback: WriteResultCallback?
+                    ) {
+                        if (cancellationSignal?.isCanceled == true) {
+                            callback?.onWriteCancelled()
+                            return
+                        }
+                        try {
+                            FileInputStream(outputFile).use { input ->
+                                FileOutputStream(destination?.fileDescriptor).use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+                        } catch (e: Exception) {
+                            callback?.onWriteFailed(e.message)
+                        }
+                    }
+                }
+                
+                printManager.print("PDF Booklet Print", printAdapter, null)
+                onSuccess() // Notify success (UI can dismiss loading)
+                
+            } catch (e: Exception) {
+                // System Print Failed or Unavailable (Common on HarmonyOS)
+                // Fallback: Share to external app (WPS, Reader, etc.)
+                try {
+                    val shareIntent = Intent(Intent.ACTION_VIEW).apply {
+                        val authority = "${context.packageName}.fileprovider"
+                        val contentUri = androidx.core.content.FileProvider.getUriForFile(context, authority, outputFile)
+                        setDataAndType(contentUri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(shareIntent)
+                    onSuccess()
+                } catch (shareError: Exception) {
+                    onError("打印服务不可用，且无法调用外部应用: ${shareError.message}")
                 }
             }
-
-            printManager.print("PDF Booklet Print", printAdapter, null)
 
         } catch (e: Exception) {
             onError(e.message ?: "Print failed")

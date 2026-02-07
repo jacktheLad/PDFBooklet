@@ -1,6 +1,7 @@
 {
-  "version": "1.1.4",
-  "changelog": "打印升级: 修复直接调用系统打印时清晰度不足的问题，现在直接打印也支持 Retina 级高清画质 (324 DPI)。\n性能优化: 采用智能分级渲染策略，预览流畅不卡顿，导出/打印高清不模糊。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.4.apk",
+  "version": "1.1.5",
+  "versionCode": 30,
+  "changelog": "1. 修复鸿蒙系统打印兼容性问题（自动降级为文件分享）。\n2. 大幅提升打印清晰度（4.5f 高清渲染）。\n3. 优化分割缩放算法，最大化利用纸张空间。\n4. 增加打印任务加载提示。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.5.apk",
   "date": "2026-02-05"
 }
