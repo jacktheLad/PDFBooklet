@@ -1,7 +1,7 @@
 {
-  "version": "1.1.6",
-  "versionCode": 31,
-  "changelog": "1. 新增高清打印引导提示，建议追求极致画质的用户使用厂商App打印。\n2. 持续优化打印体验和兼容性。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.6.apk",
+  "version": "1.1.7",
+  "versionCode": 32,
+  "changelog": "1. 优化排版算法：修复部分文件边缘被裁切的问题，改为“适应纸张且向中缝对齐”策略，确保内容完整显示。\n2. 保持高清打印与兼容性修复。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.7.apk",
   "date": "2026-02-05"
 }

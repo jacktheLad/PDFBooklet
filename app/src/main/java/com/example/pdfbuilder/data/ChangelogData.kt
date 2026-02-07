@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.7",
+            date = "2026-02-07",
+            changes = listOf(
+                "排版修正: 修复上个版本引入的边缘裁切问题，恢复“内容完整适应”策略，并保持向中缝对齐以优化跨页效果。",
+                "核心优化: 确保任何尺寸的 PDF 都能在小册子中完整显示，不再丢失边缘内容。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.6",
             date = "2026-02-07",
             changes = listOf(

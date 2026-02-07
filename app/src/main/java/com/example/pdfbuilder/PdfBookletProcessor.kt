@@ -819,15 +819,11 @@ class PdfBookletProcessor(private val context: Context) {
         val scaleX = bitmapW.toFloat() / cropWidth
         val scaleY = bitmapH.toFloat() / cropHeight
         
-        // Optimize scale strategy based on split mode:
-        // - Vertical Split: Prefer Fit Height (scaleY). If source is wide, crop outer edges. If source is tall, fit height and leave side gaps.
-        // - Horizontal Split: Prefer Fit Width (scaleX). If source is tall, crop outer edges. If source is wide, fit width and leave vertical gaps.
-        // - None: Fit Inside (min) to ensure full content visibility.
-        val scale = when (config.splitMode) {
-            SplitMode.VERTICAL -> scaleY
-            SplitMode.HORIZONTAL -> scaleX
-            SplitMode.NONE -> scaleX.coerceAtMost(scaleY)
-        }
+        // Optimize scale strategy:
+        // Always use "Fit Inside" (min scale) to ensure NO content is cropped.
+        // The alignment logic (tx/ty) below ensures that if there is extra space,
+        // the content is pushed towards the binding edge (split line) to minimize the gap in the middle.
+        val scale = scaleX.coerceAtMost(scaleY)
 
         val tx: Float
         val ty: Float
