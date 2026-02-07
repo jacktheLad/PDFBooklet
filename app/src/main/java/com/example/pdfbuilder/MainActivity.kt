@@ -965,6 +965,40 @@ fun PrintOptionDialog(
                 PrintOptionGroup("单面：奇数页（正面）", listOf(BookletPrintOption.SINGLE_ODD, BookletPrintOption.SINGLE_ODD_REVERSE), selectedOption, onOptionSelected)
                 Divider()
                 PrintOptionGroup("单面：偶数页（背面）", listOf(BookletPrintOption.SINGLE_EVEN, BookletPrintOption.SINGLE_EVEN_REVERSE), selectedOption, onOptionSelected)
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Tip Card
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = "💡",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "高清打印小贴士",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "系统打印服务可能会压缩画质。如需极致清晰度，建议先点击主界面的“生成 PDF”保存文件，然后使用打印机厂商 App（如 Epson iPrint, HP Smart）打开文件进行打印。",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
