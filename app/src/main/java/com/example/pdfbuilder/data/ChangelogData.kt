@@ -9,6 +9,14 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.8",
+            date = "2026-02-21",
+            changes = listOf(
+                "修复: 上下分割模式下，小册子封面/封底页码对调导致的预览错位。",
+                "优化: 上下/左右分割在预览与导出中的一致性，奇数像素页面更稳定。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.7",
             date = "2026-02-07",
             changes = listOf(

@@ -25,6 +25,12 @@ enum class PrintSubset {
 
 class PdfBookletProcessor(private val context: Context) {
 
+    private fun splitAtHalf(size: Int): Int {
+        // Use integer split to avoid top/bottom (or left/right) halves choosing different scale
+        // due to rounding differences (e.g. odd pixel sizes).
+        return (size / 2).coerceIn(1, size - 1)
+    }
+
     private fun normalizeRotationDegrees(degrees: Int): Int {
         val d = ((degrees % 360) + 360) % 360
         return when (d) {
@@ -709,14 +715,14 @@ class PdfBookletProcessor(private val context: Context) {
                     }
 
                     sourceIdx to { w: Int, h: Int ->
-                        val splitX = (w * 0.5f).roundToInt().coerceIn(1, w - 1)
+                        val splitX = splitAtHalf(w)
                         if (useLeftHalf) Rect(0, 0, splitX, h) else Rect(splitX, 0, w, h)
                     }
                 } else {
                     val sourceIdx = adjustedLogicalIndex / 2
                     val useLeftHalf = adjustedLogicalIndex % 2 == 0
                     sourceIdx to { w: Int, h: Int ->
-                        val splitX = (w * 0.5f).roundToInt().coerceIn(1, w - 1)
+                        val splitX = splitAtHalf(w)
                         if (useLeftHalf) Rect(0, 0, splitX, h) else Rect(splitX, 0, w, h)
                     }
                 }
@@ -732,20 +738,23 @@ class PdfBookletProcessor(private val context: Context) {
                     }
 
                     val useTopHalf = when (contentPageNumber) {
-                        1 -> false
-                        contentPageCount -> true
+                        // Cover spread (sourceIdx==0) is treated as stacked top/bottom for horizontal split.
+                        // The first logical page should map to the TOP half, and the last logical page
+                        // (back cover) to the BOTTOM half. Otherwise the preview shows "page number swapped".
+                        1 -> true
+                        contentPageCount -> false
                         else -> contentPageNumber % 2 == 0
                     }
 
                     sourceIdx to { w: Int, h: Int ->
-                        val splitY = (h * 0.5f).roundToInt().coerceIn(1, h - 1)
+                        val splitY = splitAtHalf(h)
                         if (useTopHalf) Rect(0, 0, w, splitY) else Rect(0, splitY, w, h)
                     }
                 } else {
                     val sourceIdx = adjustedLogicalIndex / 2
                     val useTopHalf = adjustedLogicalIndex % 2 == 0
                     sourceIdx to { w: Int, h: Int ->
-                        val splitY = (h * 0.5f).roundToInt().coerceIn(1, h - 1)
+                        val splitY = splitAtHalf(h)
                         if (useTopHalf) Rect(0, 0, w, splitY) else Rect(0, splitY, w, h)
                     }
                 }
@@ -816,14 +825,40 @@ class PdfBookletProcessor(private val context: Context) {
         // UPDATE: User requested "No Crop" + "Seamless Split".
         // Strategy: Scale to fit (maintain aspect ratio) and align content to the split line.
         
-        val scaleX = bitmapW.toFloat() / cropWidth
-        val scaleY = bitmapH.toFloat() / cropHeight
-        
-        // Optimize scale strategy:
-        // Always use "Fit Inside" (min scale) to ensure NO content is cropped.
-        // The alignment logic (tx/ty) below ensures that if there is extra space,
-        // the content is pushed towards the binding edge (split line) to minimize the gap in the middle.
-        val scale = scaleX.coerceAtMost(scaleY)
+        // IMPORTANT:
+        // For split mode, top/bottom (or left/right) crop sizes can differ by 1px when source size is odd.
+        // If we compute scale from `cropWidth/cropHeight` per-half, the two halves may end up with
+        // slightly different `scale` (depending on which dimension becomes the limiting factor),
+        // which makes the seam look "misaligned" in preview.
+        //
+        // Fix: compute a single scale for both halves based on the larger half on the split axis.
+        val scale = when (config.splitMode) {
+            SplitMode.VERTICAL -> {
+                val w = page.width
+                val h = page.height
+                val splitX = splitAtHalf(w)
+                val maxHalfW = maxOf(splitX, w - splitX).toFloat()
+
+                val scaleX = bitmapW.toFloat() / maxHalfW
+                val scaleY = bitmapH.toFloat() / h.toFloat()
+                scaleX.coerceAtMost(scaleY)
+            }
+            SplitMode.HORIZONTAL -> {
+                val w = page.width
+                val h = page.height
+                val splitY = splitAtHalf(h)
+                val maxHalfH = maxOf(splitY, h - splitY).toFloat()
+
+                val scaleX = bitmapW.toFloat() / w.toFloat()
+                val scaleY = bitmapH.toFloat() / maxHalfH
+                scaleX.coerceAtMost(scaleY)
+            }
+            SplitMode.NONE -> {
+                val scaleX = bitmapW.toFloat() / cropWidth
+                val scaleY = bitmapH.toFloat() / cropHeight
+                scaleX.coerceAtMost(scaleY)
+            }
+        }
 
         val tx: Float
         val ty: Float

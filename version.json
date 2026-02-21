@@ -1,7 +1,7 @@
 {
-  "version": "1.1.7",
-  "versionCode": 32,
-  "changelog": "1. 优化排版算法：修复部分文件边缘被裁切的问题，改为“适应纸张且向中缝对齐”策略，确保内容完整显示。\n2. 保持高清打印与兼容性修复。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.7.apk",
-  "date": "2026-02-05"
+  "version": "1.1.8",
+  "versionCode": 33,
+  "changelog": "1. 修复上下分割模式下小册子封面/封底页码对调导致的预览错位问题。\n2. 优化上下/左右分割在预览与导出中的一致性（处理奇数像素页尺寸时更稳定）。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.8.apk",
+  "date": "2026-02-21"
 }
