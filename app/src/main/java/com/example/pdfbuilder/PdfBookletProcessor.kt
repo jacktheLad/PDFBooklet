@@ -557,17 +557,13 @@ class PdfBookletProcessor(private val context: Context) {
         
         if (config.splitMode == SplitMode.HORIZONTAL) {
             val halfHeight = sheetHeight / 2f
-            
-            // Determine Top and Bottom pages
-            // For Booklet Front side, we swap so Page 1 is on Top, Page N is on Bottom.
-            // For Booklet Back side, we keep Page 2 on Top, Page N-1 on Bottom.
-            // For Normal mode, sequence is Top -> Bottom.
-            
-            val (topPageIdx, bottomPageIdx) = if (config.layoutMode == LayoutMode.BOOKLET && !isBack) {
-                rightIdx to leftIdx // Swap for Front
-            } else {
-                leftIdx to rightIdx // Normal for Back or Non-Booklet
-            }
+
+            // Keep ordering consistent with vertical split:
+            // - leftIdx maps to the "first slot" on the sheet
+            // - rightIdx maps to the "second slot" on the sheet
+            // For horizontal split, we treat top as the first slot and bottom as the second slot.
+            val topPageIdx = leftIdx
+            val bottomPageIdx = rightIdx
 
             drawPage(
                 canvas,
@@ -738,11 +734,12 @@ class PdfBookletProcessor(private val context: Context) {
                     }
 
                     val useTopHalf = when (contentPageNumber) {
-                        // Cover spread (sourceIdx==0) is treated as stacked top/bottom for horizontal split.
-                        // The first logical page should map to the TOP half, and the last logical page
-                        // (back cover) to the BOTTOM half. Otherwise the preview shows "page number swapped".
-                        1 -> true
-                        contentPageCount -> false
+                        // Keep consistent with vertical split's cover mapping:
+                        // - First logical page uses the "second half" of the cover spread
+                        // - Last logical page uses the "first half" of the cover spread
+                        // For horizontal split, we map it as: bottom = first page, top = last page.
+                        1 -> false
+                        contentPageCount -> true
                         else -> contentPageNumber % 2 == 0
                     }
 
