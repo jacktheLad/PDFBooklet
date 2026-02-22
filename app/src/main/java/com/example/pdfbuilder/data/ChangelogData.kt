@@ -9,6 +9,15 @@ data class VersionInfo(
 object ChangelogData {
     val versions = listOf(
         VersionInfo(
+            version = "1.1.9",
+            date = "2026-02-22",
+            changes = listOf(
+                "优化: 成册效果封面/封底合并显示，阅读更连贯。",
+                "优化: 成册效果页码改为“第a,b/总页”格式，避免“逻辑页”字样带来的困惑。",
+                "调整: 打印排版页数显示保持原有逻辑。"
+            )
+        ),
+        VersionInfo(
             version = "1.1.8",
             date = "2026-02-21",
             changes = listOf(

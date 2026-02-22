@@ -498,7 +498,23 @@ fun PreviewSectionFixed(
                 ) {
                     // Page Info Text
                     val infoText = if (uiState.isReaderPreview) {
-                        "${uiState.readerSpreadIndex + 1} / ${uiState.totalReaderSpreads}"
+                        val totalPages = uiState.totalOutputSheets * 4
+                        val isBooklet = uiState.config.layoutMode == LayoutMode.BOOKLET
+                        if (totalPages == 0) {
+                            "第 0/0 页"
+                        } else if (isBooklet) {
+                            val leftPage = if (uiState.readerSpreadIndex == 0) totalPages else uiState.readerSpreadIndex * 2
+                            val rightPage = if (uiState.readerSpreadIndex == 0) 1 else uiState.readerSpreadIndex * 2 + 1
+                            "第 $leftPage,$rightPage/$totalPages 页"
+                        } else {
+                            val startPage = uiState.readerSpreadIndex * 2 + 1
+                            val endPage = (startPage + 1).coerceAtMost(totalPages)
+                            if (startPage == endPage) {
+                                "第 $startPage/$totalPages 页"
+                            } else {
+                                "第 $startPage-$endPage/$totalPages 页"
+                            }
+                        }
                     } else {
                         val isBooklet = uiState.config.layoutMode == LayoutMode.BOOKLET
                         if (isBooklet) {
@@ -1394,4 +1410,3 @@ fun doBookletPrint(
         }
     }
 }
-

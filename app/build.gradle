@@ -11,8 +11,8 @@ android {
         applicationId "com.dabaicai.pdfxiaocezi"
         minSdk 21
         targetSdk 34
-        versionCode 33
-        versionName "1.1.8"
+        versionCode 34
+        versionName "1.1.9"
 
         vectorDrawables {
             useSupportLibrary true

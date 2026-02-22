@@ -1,7 +1,7 @@
 {
-  "version": "1.1.8",
-  "versionCode": 33,
-  "changelog": "1. 修复上下分割模式下小册子封面/封底页码对调导致的预览错位问题。\n2. 优化上下/左右分割在预览与导出中的一致性（处理奇数像素页尺寸时更稳定）。",
-  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.8.apk",
-  "date": "2026-02-21"
+  "version": "1.1.9",
+  "versionCode": 34,
+  "changelog": "1. 优化成册效果封面/封底合并显示，阅读更连贯。\n2. 成册效果页码改为“第a,b/总页”格式，避免“逻辑页”字样带来的困惑。\n3. 打印排版页数显示保持原有逻辑。",
+  "downloadUrl": "https://raw.githubusercontent.com/jacktheLad/PDFBooklet/main/releases/PDF小册子-v1.1.9.apk",
+  "date": "2026-02-22"
 }

@@ -251,7 +251,11 @@ class BookletViewModel(application: Application) : AndroidViewModel(application)
         val sheets = (totalLogicalPages + 3) / 4
         
         val totalBookletPages = sheets * 4
-        val totalSpreads = (totalBookletPages / 2) + 1
+        val totalSpreads = if (config.layoutMode == LayoutMode.BOOKLET) {
+            totalBookletPages / 2
+        } else {
+            (totalBookletPages + 1) / 2
+        }
 
         _uiState.value = _uiState.value.copy(
             totalInputPages = inputPageCount,

@@ -102,17 +102,17 @@ class PdfBookletProcessor(private val context: Context) {
         val blankPageCount = totalBookletPages - totalLogicalContentPages
 
         val totalSpreads = if (config.layoutMode == LayoutMode.BOOKLET) {
-            (totalBookletPages / 2) + 1
+            totalBookletPages / 2
         } else {
             (totalBookletPages + 1) / 2
         }
         val safeSpreadIndex = spreadIndex.coerceIn(0, totalSpreads - 1)
 
         val pagesToShow = if (config.layoutMode == LayoutMode.BOOKLET) {
-            when (safeSpreadIndex) {
-                0 -> listOf(0)
-                totalBookletPages / 2 -> listOf(totalBookletPages - 1)
-                else -> listOf(2 * safeSpreadIndex - 1, 2 * safeSpreadIndex)
+            if (safeSpreadIndex == 0) {
+                listOf(totalBookletPages - 1, 0)
+            } else {
+                listOf(2 * safeSpreadIndex - 1, 2 * safeSpreadIndex)
             }
         } else {
             // Normal layout: spread 0 is page 0,1, spread 1 is page 2,3...
